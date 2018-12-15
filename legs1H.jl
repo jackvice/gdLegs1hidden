@@ -17,12 +17,11 @@ function main(;
     decayRate = 0.99# 0.99 # decay Rate for RMSProp leaky sum of grad^2
     batchSize = 220 #2 #200  # every how many episodes to do a param update?
     weightUpdate = 20 #1 #20
-    learningRate = 1e-3 #1e-3 #
+    learningRate = 1e-4 #1e-3 #
     gamma = 0.9 # 0.99  #discount factor for reward
     runningReward = false
     inputDim = 14
     hiddenSize = 28 #https://www.heatonresearch.com/2017/06/01/hidden-layers.html
-    #hiddenSize2 = 12 #https://www.heatonresearch.com/2017/06/01/hidden-layers.html
     outputDim = 24
     rewardSum = 0
     maxReward = 0
@@ -84,7 +83,7 @@ function main(;
         for i = 1:legUpdateRate
             observation, tempReward, done, info = Gym.step!(env, motorAction)
             render && Gym.render(env)
-            if reward == -100
+            if tempReward == -100
                 reward = (3*maxReward) * -1
                 numFalls += 1
                 fall = true
@@ -93,6 +92,7 @@ function main(;
             else
                 reward += tempReward
             end
+            #reward += 10
         end
 
         #test of pushing weights
@@ -108,8 +108,8 @@ function main(;
 
         rewardSum += reward
         historyRewards = [ historyRewards reward ]
-        println("predictedAction: ",predictedAction)
-        println("               fakeLabels: ",fakeLabels)
+        #println("predictedAction: ",predictedAction)
+        #println("               fakeLabels: ",fakeLabels)
         ##lossGradient = predictedAction - fakeLabels # just to try if it works?
         lossGradient = fakeLabels - predictedAction # 24 of each
         historyLossGradient = [ historyLossGradient  lossGradient ] # append
@@ -132,12 +132,12 @@ function main(;
             gradient = gradientCalc(gradientLogDiscounted, historyHidden,
                       		    historyObservations, weights)
             
-            for i = 1:3
+            for i = 1:2
                 #println("i:",i," size gradient ", size(convert(btype,gradient[i])))
 		tempGradientSum[i] += convert(btype,gradient[i])
 	    end
             
-	    return  ################################# RETURN
+	    #return  ################################# RETURN
 
 	    if runningReward == false  # first time
 		runningReward = rewardSum
@@ -254,7 +254,7 @@ rnd() = 2 * rand() - 1
 #fix to knet in here.
 function weightsUpdate(weights,learningRate, decayRate, expectationGsquared, gBatchSum)
     epsilon = 1e-5
-    for i = 1:3 #based on the number of layers
+    for i = 1:2 #based on the number of layers
 	tempGradient = gBatchSum[i]
         
         if false #true# i == 2
@@ -301,20 +301,20 @@ function gradientCalc(gradientLogDiscounted, historyHidden,
     #println("DCost_DWeight2 = (deltaLog * historyHidden')")
     #println("\n")
     
-    DCost_DWeight3 = historyHidden2 * deltaLog
+    #DCost_DWeight3 = historyHidden2 * deltaLog
 
-    deltaLog3 = deltaLog * weights[3]'
-    deltaLog3 = relu.(deltaLog3)
+    #deltaLog3 = deltaLog * weights[3]'
+    #deltaLog3 = relu.(deltaLog3)
     #println("size(historyHidden1): ",size(historyHidden1))
     #println("size(deltaLog3): ",size(deltaLog3))
-    DCost_DWeight2 = (historyHidden1 * deltaLog3)
+    DCost_DWeight2 = historyHidden * deltaLog
     ##DCost_DWeight2 = dot(historyHidden', deltaLog)
 
     #println("size(weights[2]): ",size(weights[2]))
     #println("deltaLog2 = deltaLog' * weights[2]")
     
     
-    deltaLog2 = deltaLog3 * weights[2]'
+    deltaLog2 = deltaLog * weights[2]'
     #println("                                     size(deltaLog2) ",size(deltaLog2))
     #println("                                     size(historyObservations ",size(historyObservations))
     deltaLog2 = relu.(deltaLog2)
@@ -402,7 +402,7 @@ end
 sigmoid(z) = 1.0 ./ (1.0 .+ exp(-z))
 
 
-function predict(weights, observation,inputDim, hidden1Size, hidden2Size, outputDim, printStuff)
+function predict(weights, observation,inputDim, hiddenSize, outputDim, printStuff)
     outputs = zeros(outputDim)
 
     #println("size weights[1]: ", size(weights[1]), "size observation: ", size(observation))
@@ -410,17 +410,18 @@ function predict(weights, observation,inputDim, hidden1Size, hidden2Size, output
 
     hiddenLayerValues = relu.(hiddenLayerValues)
     
-
+    outputLayerValues = weights[2]' * hiddenLayerValues
+    
     #println("size reshape(observation, inputDim, 1 ) :", size(reshape(observation, inputDim, 1 )))
     #println("size weights[2]: ", size(weights[2]), "size : hiddenLayerValues", size(hiddenLayerValues))
 
-    hiddenLayer2Values = weights[2]' * hiddenLayerValues
+    #hiddenLayer2Values = weights[2]' * hiddenLayerValues
 
-    hiddenLayer2Values = relu.(hiddenLayer2Values)
+    #hiddenLayer2Values = relu.(hiddenLayer2Values)
     #println("size weights[3]: ", size(weights[3]), ",  size hidden2: ", size(hiddenLayer2Values))
     #println("size reshape(weights[3], outputDim, hidden2Size)  :", size(reshape(weights[3], outputDim, hidden2Size)))
     #outputLayerValues = reshape(weights[3], outputDim, hidden2Size) * hiddenLayer2Values
-    outputLayerValues = weights[3]' * hiddenLayer2Values
+    #outputLayerValues = weights[3]' * hiddenLayer2Values
     
     for i = 1:outputDim
         outputs[i] = sigmoid(outputLayerValues[i])
@@ -437,7 +438,7 @@ function predict(weights, observation,inputDim, hidden1Size, hidden2Size, output
         #println("predicted[ j : ( i * 6 ) ] ) ): ",predicted[ j : ( i * 6 ) ] )
         #j +=6
     #end
-    return (hiddenLayerValues, hiddenLayer2Values, outputs)
+    return (hiddenLayerValues, outputs)
 end
 
 
