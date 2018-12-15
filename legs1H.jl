@@ -2,10 +2,9 @@ using Knet
 using Dates
 import Gym
 import Random
-using LinearAlgebra
 using DelimitedFiles
 
-# (C) means the line was copied from other code
+
 function main(;
               mLoop = 100,
               renderPeriod = 2,
@@ -50,7 +49,7 @@ function main(;
     historyHidden = atype(undef, hiddenSize, 0)
     
     weights = atype[ randn(Float32,inputDim,hiddenSize)/sqrt(inputDim),
-                     randn(Float32,hiddenSize,outputDim)/sqrt(hiddenSize2)]
+                     randn(Float32,hiddenSize,outputDim)/sqrt(hiddenSize)]
     expectationGsquared = atype[zeros(inputDim,hiddenSize),
                                 zeros(hiddenSize,outputDim)]
 
@@ -136,7 +135,6 @@ function main(;
             for i = 1:3
                 #println("i:",i," size gradient ", size(convert(btype,gradient[i])))
 		tempGradientSum[i] += convert(btype,gradient[i])
-                
 	    end
             
 	    return  ################################# RETURN
