@@ -4,6 +4,7 @@ import Gym
 import Random
 using DelimitedFiles
 
+#version fixed reward
 
 function main(;
               mLoop = 100,
