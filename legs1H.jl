@@ -207,7 +207,7 @@ function motorActionValsLabelsFromProbs(batch, action, labels, predicted, maxRew
         exploreRnd = rand()
         exploreThresh = batch / 10000.0
         if exploreThresh > exploreVal # would be only on policy
-            exploreThresh = exploreVal # always explore by at least 5%
+            exploreThresh = exploreVal # always explore by at least 1 - exploreVal %
         end
         
         #println("x and predicted[ tempIndex[ i ] ]", x , predicted[ tempIndex[ i ] ] )
@@ -357,7 +357,7 @@ function DiscountWithRewards(historyLossGradient, historyRewards, gamma)
     #        size(historyLossGradient), size(discountEpisodeRewards))
     #println("shape from discound with rewards", size(historyLossGradient .* discountEpisodeRewards))
     #println("length: ", length(discountEpisodeRewards))
-    #return (historyLossGradient .* discountEpisodeRewards) * -1 # I don't know why wrong sign.
+    return (historyLossGradient .* discountEpisodeRewards)# * -1 # I don't know why wrong sign.
     test1 = (historyLossGradient .* discountEpisodeRewards)# I don't know why wrong sign.
     for i = 1:220
         returnVal[i,:] =  historyLossGradient[i,:] * discountEpisodeRewards[i]
