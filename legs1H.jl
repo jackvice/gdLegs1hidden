@@ -84,7 +84,7 @@ function main(;
             observation, tempReward, done, info = Gym.step!(env, motorAction)
             render && Gym.render(env)
             if tempReward == -100
-                reward = (3*maxReward) * -1
+                reward = maxReward * -1
                 numFalls += 1
                 fall = true
                 observation = Gym.reset!(env)
@@ -202,11 +202,12 @@ function motorActionValsLabelsFromProbs(batch, action, labels, predicted, maxRew
         j +=6
     end
     #println("tempIndex: ", tempIndex )
+    exploreVal = .92
     for k = 1:4
         exploreRnd = rand()
-        exploreThresh = batch / 100000.0
-        if exploreThresh > 0.95 # would be only on policy
-            exploreThresh = 0.95 # always explore by at least 5%
+        exploreThresh = batch / 10000.0
+        if exploreThresh > exploreVal # would be only on policy
+            exploreThresh = exploreVal # always explore by at least 5%
         end
         
         #println("x and predicted[ tempIndex[ i ] ]", x , predicted[ tempIndex[ i ] ] )
@@ -273,14 +274,14 @@ function weightsUpdate(weights,learningRate, decayRate, expectationGsquared, gBa
 	#println("size tempGradient[i]",size(tempGradient))
 	#println("size tempGradient",size(tempGradient))
 	#println("e ",e)
-	z1 = convert(Array{Float32},(learningRate * tempGradient)) # make knet later
-	z2 = convert(Array{Float32},(sqrt.(expectationGsquared[i] .+ epsilon)))
-        #z1 = convert(KnetArray{Float32},learningRate * tempGradient) # make knet later
-	#z2 = sqrt.(expectationGsquared[i] .+ e)
+	#z1 = convert(Array{Float32},(learningRate * tempGradient)) # make knet later
+	#z2 = convert(Array{Float32},(sqrt.(expectationGsquared[i] .+ epsilon)))
+        z1 = convert(KnetArray{Float32},learningRate * tempGradient) # make knet later
+	z2 = sqrt.(expectationGsquared[i] .+ epsilon)
 	#println("size z1",size(z1))
 	#println("size z2",size(z2))
 	z3 = z1 ./ z2
-        z3 = convert(KnetArray{Float32},z3)
+        #z3 = convert(KnetArray{Float32},z3)
 	#println("size z3",size(z3))
         
         weights[i] += z3
