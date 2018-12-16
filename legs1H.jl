@@ -64,6 +64,9 @@ function main(;
         Gym.seed!(env, randSeed)
     end
     observation = Gym.reset!(env)
+    println("1st. observation",observation)
+    
+    
     render && Gym.render(env)
     initVelocity = 1.0
     motorAction = [initVelocity initVelocity (-1*initVelocity) (-1*initVelocity)]
@@ -72,15 +75,15 @@ function main(;
         cycleNum +=1
         
         observation = convert(atype,observation[1:14])
-        
+        println("observation",observation)
         (hiddenValues, predictedAction) = predict(weights, observation, inputDim,
                                                   hiddenSize, outputDim, printStuff)
         historyObservations = [ historyObservations observation ] # append
 	historyHidden = [ historyHidden hiddenValues ] # append
         
         # Now we get our motor commands per joint and fake labels
-        fakeLabels = motorActionValsLabelsFromProbs(batchNum, motorAction, fakeLabels,
-                                                    predictedAction, maxReward,onPolicy)
+        #fakeLabels = motorActionValsLabelsFromProbs(batchNum, motorAction, fakeLabels,
+        #                                            predictedAction, maxReward,onPolicy)
         reward = 0.0
         tempReward = 0.0 
         for i = 1:legUpdateRate
@@ -104,7 +107,6 @@ function main(;
         end
         
         
-        printObservations(observation)
         return  
         #test of pushing weights
         if false #observation[2] > .01
@@ -194,57 +196,6 @@ function main(;
     render && Gym.close!(env)
     println("history fall episode numbers ", historyFalls )
     return
-end
-
-function motorActionValsLabelsFromProbs(batch, action, labels, predicted, maxReward,onPolicy)
-    actionVals = [-1.0 -0.666 -0.333 0.333 0.666 1.0]
-    maxIndex = [0 0 0 0] #indexs for the max of each set of 
-    labels = zeros(24)
-    j=1
-    #println("              ")
-    #println(predicted)
-    for i = 1:4
-        #find the max value of the each set of 6 values
-        maxIndex[i] = findfirst(isequal(maximum(predicted[ j : ( i * 6 ) ] ) ),
-                                 predicted[ j : ( i * 6 ) ]) + ((i-1) *6)
-        #println("i: ", i,",  maxIndex[i]: ",maxIndex[i],",  j: ",
-        #        j,",  max: ", maximum(predicted[ j : ( i * 6 ) ] ) )
-        #println("predicted[ j : ( i * 6 ) ] ) ): ",predicted[ j : ( i * 6 ) ] )
-        
-        j +=6
-    end
-    #println("tempIndex: ", tempIndex )
-    exploreVal = .92
-    for k = 1:4
-        exploreRnd = rand()
-        exploreThresh = batch / 10000.0
-        if exploreThresh > exploreVal # would be only on policy
-            exploreThresh = exploreVal # always explore by at least 1 - exploreVal %
-        end
-        
-        #println("x and predicted[ tempIndex[ i ] ]", x , predicted[ tempIndex[ i ] ] )
-        if exploreRnd <  exploreThresh || onPolicy == 1
-            
-            #println("On Policy randAction: ",randAction,",  k: ",
-            #        k, ",  tempIndex[k]: ", tempIndex[k],",   (k-1)*6: ", (k-1)*6 ) 
-            ##ERROR: BoundsError: attempt to access 1×6 Array{Float64,2} at index [-9]
-            ##x: 0.5732682297117717,  i: 4,  tempIndex: ,  tempIndex[i]: 7,   (i-1)*6: 18
-            ##ERROR: BoundsError: attempt to access 1×6 Array{Float64,2} at index [-11]
-            action[k] = actionVals[maxIndex[k]-((k-1)*6)]
-            labels[maxIndex[k]] = 1.0
-        else #take random action
-            #action[k] = actionVals[tempIndex[ k ]-(( k - 1 ) * 6 )] * -1
-            #tempFound = findfirst(isequal(action[ k ]), actionVals )
-            #labels[tempFound[2] + (( k - 1 ) * 6 )] = 1.0
-            randAction = rand(1:6) 
-            action[k] = actionVals[randAction]
-            labels[((k-1) * 6) + randAction] = 1.0
-            #println("IsRand, explore: ", explore,",  k: ",
-            #        k, ",  maxIndex[k]: ", maxIndex[k],", action[k]: ",action[k]  ) 
-        end
-    end
-    #println("labels: ",labels)
-    return labels
 end
 
 
