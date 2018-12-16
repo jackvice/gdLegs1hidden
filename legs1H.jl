@@ -15,6 +15,8 @@ function main(;
 	      #atype = Array{Float32} #no gpu for now
               atype = gpu() >= 0 ? KnetArray{Float32} : Array{Float32}, #(C)
               )
+    println("gpu(): ", gpu())
+    
     decayRate = 0.99# 0.99 # decay Rate for RMSProp leaky sum of grad^2
     batchSize = 220 #2 #200  # every how many episodes to do a param update?
     weightUpdate = 20 #1 #20
@@ -22,8 +24,8 @@ function main(;
     gamma = 0.9 # 0.99  #discount factor for reward
     runningReward = false
     inputDim = 14
-    hiddenSize = 28 #https://www.heatonresearch.com/2017/06/01/hidden-layers.html
-    outputDim = 24
+    hiddenSize = 4 # 18 #https://www.heatonresearch.com/2017/06/01/hidden-layers.html
+    outputDim = 2 # 4
     rewardSum = 0
     maxReward = 0
     startUnixTime = time()
@@ -32,7 +34,7 @@ function main(;
     batchNum = 0
     minFallRatio = 99999
     renderUpdate = 0
-    printStuff = 0
+    printStuff = 1
     reward = 0
     legUpdateRate = 5
     onPolicy = 0 # don't start on policy
@@ -85,7 +87,7 @@ function main(;
             observation, tempReward, done, info = Gym.step!(env, motorAction)
             render && Gym.render(env)
             if tempReward == -100
-                reward = maxReward * -1
+                reward = 0.00001 #maxReward * -1
                 numFalls += 1
                 fall = true
                 observation = Gym.reset!(env)
@@ -95,7 +97,15 @@ function main(;
             end
             #reward += 10
         end
-
+        if reward < 0
+            reward = -0.1 / reward
+        else
+            reward = reward * 10.0
+        end
+        
+        
+        printObservations(observation)
+        return  
         #test of pushing weights
         if false #observation[2] > .01
             fakeLabels = zeros(24)
@@ -105,6 +115,7 @@ function main(;
             fakeLabels[24] = 1
             reward = 50
         end
+        #return
         #end test of pushing 
 
         rewardSum += reward
@@ -451,6 +462,7 @@ function printObservations(observation)
         println(observationTypes[i], observation[i])
     end
 end
+
 
 function printTime(str,oldTime, maxTime)
     diffTime = time() - oldTime
